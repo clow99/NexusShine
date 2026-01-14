@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
     title: "NexusShine",
-    description: "LavTracker migrated to Next.js",
+    description: "Nexus Shine migrated to Next.js",
 };
 
 export default function RootLayout({ children }) {

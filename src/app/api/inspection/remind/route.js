@@ -35,7 +35,7 @@ export async function POST() {
         if (toEmails.length === 0) continue;
 
         const html = `
-        <h2>LavTracker Inspection Reminder</h2>
+        <h2>Nexus Shine Inspection Reminder</h2>
         <p>Branch: ${branch.name}</p>
         <p>Location: ${inspection.bathroom.location.locationName}</p>
         <p>Bathroom: ${inspection.bathroom.name}</p>
@@ -48,7 +48,7 @@ export async function POST() {
         await sendInspectionFailEmail({
             to: toEmails,
             cc: ccEmails,
-            subject: "LavTracker - Inspection Reminder",
+            subject: "Nexus Shine - Inspection Reminder",
             html,
         });
 
