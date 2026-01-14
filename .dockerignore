@@ -1,0 +1,58 @@
+# Ignore Node.js dependencies
+
+node_modules
+vendors
+/public/hot
+
+# Ignore vendor directory (will be installed during build)
+
+vendor
+
+# Ignore log files
+
+\*.log
+
+# Ignore cached data
+
+bootstrap/cache/\*
+!bootstrap/cache/.gitignore
+
+# Ignore IDE config and metadata
+
+.idea
+.vscode
+_.swp
+_.swo
+
+# Ignore Docker files themselves
+
+Dockerfile
+docker-compose.yml
+\*.dockerignore
+
+# Ignore OS generated files
+
+.DS_Store
+Thumbs.db
+
+# Ignore git-related files
+
+.git
+.gitignore
+
+# Ignore tests (optional, if not needed in the image)
+
+tests
+
+# Ignore storage files, except required structure
+
+storage/\*
+!storage/app
+!storage/framework
+!storage/logs
+!storage/.gitignore
+
+# Ignore npm and Yarn lock files (optional)
+
+package-lock.json
+yarn.lock
