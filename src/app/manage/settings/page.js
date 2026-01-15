@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import UsersClient from "@/components/manage/users-client";
+import { getAppSettings } from "@/lib/settings";
+import SettingsClient from "@/components/manage/settings-client";
 
-export default async function ManageUsersPage() {
+export default async function ManageSettingsPage() {
     const session = await auth();
     if (!session?.user?.isAdmin) {
         return (
@@ -10,23 +10,14 @@ export default async function ManageUsersPage() {
                 <div className="mx-auto max-w-3xl rounded-2xl border border-foreground/10 bg-background p-6 text-center shadow">
                     <h2 className="text-xl font-semibold">Unauthorized</h2>
                     <p className="mt-2 text-sm text-foreground/60">
-                        You do not have permission to manage users.
+                        You do not have permission to view admin settings.
                     </p>
                 </div>
             </div>
         );
     }
 
-    const users = await prisma.user.findMany({
-        orderBy: { username: "asc" },
-        select: {
-            id: true,
-            username: true,
-            email: true,
-            code: true,
-            isAdmin: true,
-            active: true,
-        },
-    });
-    return <UsersClient initialUsers={users} />;
+    const settings = await getAppSettings();
+    return <SettingsClient initialSettings={settings} />;
 }
+

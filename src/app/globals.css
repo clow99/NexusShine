@@ -2,20 +2,64 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --brand: #3c98ef;
+}
+
+:root[data-theme="classic"] {
+  --background: #ffffff;
+  --foreground: #0b0b0b;
+  --brand: #3c98ef;
+}
+
+:root[data-theme="ocean"] {
+  --background: #e7f4ff;
+  --foreground: #0b1b2b;
+  --brand: #1d7bd1;
+}
+
+:root[data-theme="forest"] {
+  --background: #eef7ef;
+  --foreground: #102416;
+  --brand: #2f8f4e;
+}
+
+:root[data-theme="sunset"] {
+  --background: #1f1410;
+  --foreground: #f7e7de;
+  --brand: #f06543;
+}
+
+:root[data-theme="night"] {
+  --background: #0e1117;
+  --foreground: #f5f7fb;
+  --brand: #7c8cff;
+}
+
+:root[data-theme="graphite"] {
+  --background: #1f1f1f;
+  --foreground: #f5f5f5;
+  --brand: #3c98ef;
+}
+
+:root[data-theme="emerald"] {
+  --background: #1b2535;
+  --foreground: #f4f7fb;
+  --brand: #18c48b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme]) {
+    --background: #ffffff;
+    --foreground: #000000;
   }
 }
 

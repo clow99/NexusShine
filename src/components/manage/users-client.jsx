@@ -10,6 +10,13 @@ export default function UsersClient({ initialUsers }) {
         email: "",
         code: "",
     });
+    const [editOpen, setEditOpen] = useState(false);
+    const [editUserId, setEditUserId] = useState(null);
+    const [editForm, setEditForm] = useState({
+        username: "",
+        email: "",
+        code: "",
+    });
     const [loading, setLoading] = useState(false);
 
     async function fetchUsers() {
@@ -31,19 +38,34 @@ export default function UsersClient({ initialUsers }) {
         setLoading(false);
     }
 
-    async function updateUser(userId) {
-        const username = window.prompt("Username");
-        const email = window.prompt("Email");
-        const code = window.prompt("Code");
-        if (!username || !email) return;
+    function openEditModal(user) {
+        setEditUserId(user.id);
+        setEditForm({
+            username: user.username ?? "",
+            email: user.email ?? "",
+            code: user.code ?? "",
+        });
+        setEditOpen(true);
+    }
+
+    function closeEditModal() {
+        if (loading) return;
+        setEditOpen(false);
+        setEditUserId(null);
+    }
+
+    async function saveEditUser(event) {
+        event?.preventDefault();
+        if (!editUserId || !editForm.username || !editForm.email) return;
         setLoading(true);
         await fetch("/api/users", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, username, email, code }),
+            body: JSON.stringify({ userId: editUserId, ...editForm }),
         });
         await fetchUsers();
         setLoading(false);
+        closeEditModal();
     }
 
     async function deleteUser(userId) {
@@ -55,26 +77,30 @@ export default function UsersClient({ initialUsers }) {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 p-6">
+        <div className="min-h-screen bg-background p-6 text-foreground">
             <div className="mx-auto max-w-5xl space-y-6">
                 <div className="flex items-center justify-between">
-                    <Link href="/" className="text-2xl font-bold text-white">
-                        <span className="text-emerald-500">Lav</span>Tracker
+                    <Link href="/" className="flex items-center">
+                        <img
+                            src="/nexus_shine_logo.png"
+                            alt="NexusShine"
+                            className="h-8 w-auto"
+                        />
                     </Link>
                     <Link
                         href="/"
-                        className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                        className="rounded-xl border border-foreground/10 px-3 py-2 text-sm text-foreground/70 hover:bg-foreground/5"
                     >
                         Back home
                     </Link>
                 </div>
-                <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-5 shadow">
-                    <h2 className="text-xl font-semibold text-white">
+                <div className="rounded-2xl border border-foreground/10 bg-background p-5 shadow">
+                    <h2 className="text-xl font-semibold text-foreground">
                         Add user
                     </h2>
                     <div className="mt-3 grid gap-3 md:grid-cols-3">
                         <input
-                            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white"
+                            className="rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
                             placeholder="Username"
                             value={form.username}
                             onChange={(e) =>
@@ -82,7 +108,7 @@ export default function UsersClient({ initialUsers }) {
                             }
                         />
                         <input
-                            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white"
+                            className="rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
                             placeholder="Email"
                             value={form.email}
                             onChange={(e) =>
@@ -90,7 +116,7 @@ export default function UsersClient({ initialUsers }) {
                             }
                         />
                         <input
-                            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white"
+                            className="rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
                             placeholder="Code"
                             value={form.code}
                             onChange={(e) =>
@@ -101,7 +127,7 @@ export default function UsersClient({ initialUsers }) {
                     <button
                         disabled={loading}
                         onClick={createUser}
-                        className="mt-4 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:opacity-50"
+                        className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"
                     >
                         Create user
                     </button>
@@ -110,32 +136,32 @@ export default function UsersClient({ initialUsers }) {
                     {users.map((user) => (
                         <div
                             key={user.id}
-                            className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4 text-white"
+                            className="rounded-2xl border border-foreground/10 bg-background p-4 text-foreground"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="text-lg font-semibold">
                                         {user.username}
                                     </div>
-                                    <div className="text-sm text-slate-300">
+                                    <div className="text-sm text-foreground/70">
                                         {user.email}
                                     </div>
-                                    <div className="text-xs text-slate-400">
+                                    <div className="text-xs text-foreground/50">
                                         Code: {user.code}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
                                         disabled={loading}
-                                        onClick={() => updateUser(user.id)}
-                                        className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold hover:bg-slate-600"
+                                        onClick={() => openEditModal(user)}
+                                        className="rounded-lg bg-foreground/10 px-3 py-2 text-sm font-semibold hover:bg-foreground/20"
                                     >
                                         Edit
                                     </button>
                                     <button
                                         disabled={loading}
                                         onClick={() => deleteUser(user.id)}
-                                        className="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-400"
+                                        className="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-foreground hover:bg-red-400"
                                     >
                                         Delete
                                     </button>
@@ -145,6 +171,77 @@ export default function UsersClient({ initialUsers }) {
                     ))}
                 </div>
             </div>
+            {editOpen ? (
+                <div
+                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Edit user"
+                >
+                    <div className="w-full max-w-lg rounded-2xl border border-foreground/10 bg-background p-5 text-foreground shadow-xl">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Edit user</h3>
+                            <button
+                                onClick={closeEditModal}
+                                className="rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground/70 hover:bg-foreground/5"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <form onSubmit={saveEditUser} className="mt-4 space-y-3">
+                            <input
+                                className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
+                                placeholder="Username"
+                                value={editForm.username}
+                                onChange={(e) =>
+                                    setEditForm({
+                                        ...editForm,
+                                        username: e.target.value,
+                                    })
+                                }
+                            />
+                            <input
+                                className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
+                                placeholder="Email"
+                                value={editForm.email}
+                                onChange={(e) =>
+                                    setEditForm({
+                                        ...editForm,
+                                        email: e.target.value,
+                                    })
+                                }
+                            />
+                            <input
+                                className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-foreground"
+                                placeholder="Code"
+                                value={editForm.code}
+                                onChange={(e) =>
+                                    setEditForm({
+                                        ...editForm,
+                                        code: e.target.value,
+                                    })
+                                }
+                            />
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={closeEditModal}
+                                    className="rounded-lg border border-foreground/10 px-3 py-2 text-sm font-semibold text-foreground/70 hover:bg-foreground/5"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"
+                                >
+                                    Save changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

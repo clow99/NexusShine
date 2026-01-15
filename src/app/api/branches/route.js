@@ -24,7 +24,7 @@ export async function POST(request) {
         );
     }
 
-    await prisma.branch.create({
+    const branch = await prisma.branch.create({
         data: {
             name,
             address,
@@ -32,14 +32,16 @@ export async function POST(request) {
             ccNotificationEmails: ccNotificationEmails ?? "",
             active: 1,
         },
+        include: {
+            locations: true,
+        },
     });
 
-    const branches = await getBranches();
     return NextResponse.json(
         {
             success: true,
             message: "Branch created successfully",
-            branches,
+            branch,
         },
         { status: 201 }
     );
@@ -89,10 +91,6 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-    const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const branchId = Number(searchParams.get("branchId"));

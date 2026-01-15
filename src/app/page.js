@@ -5,16 +5,19 @@ export default async function Home() {
     const session = await auth();
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-900 p-6">
-            <div className="flex w-full max-w-3xl flex-col items-center rounded-3xl border border-emerald-500/70 bg-slate-800/60 p-10 shadow-2xl">
-                <div className="text-5xl font-extrabold">
-                    <span className="text-emerald-500">Lav</span>
-                    <span className="text-white">Tracker</span>
+        <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
+            <div className="flex w-full max-w-3xl flex-col items-center rounded-3xl border border-brand/70 bg-foreground/5 p-10 shadow-2xl">
+                <div className="flex justify-center">
+                    <img
+                        src="/nexus_shine_logo.png"
+                        alt="NexusShine"
+                        className="h-20 w-auto"
+                    />
                 </div>
                 <div className="mt-10 grid w-full gap-4">
                     <Link
                         href="/branches"
-                        className="flex h-14 items-center justify-center rounded-xl bg-slate-700 text-lg font-semibold text-white transition hover:bg-slate-600"
+                        className="flex h-14 items-center justify-center rounded-xl bg-foreground/10 text-lg font-semibold text-foreground transition hover:bg-foreground/20"
                     >
                         Select Branch
                     </Link>
@@ -22,27 +25,29 @@ export default async function Home() {
                         <>
                             <Link
                                 href="/manage/branches"
-                                className="flex h-14 items-center justify-center rounded-xl bg-slate-700 text-lg font-semibold text-white transition hover:bg-slate-600"
+                                className="flex h-14 items-center justify-center rounded-xl bg-foreground/10 text-lg font-semibold text-foreground transition hover:bg-foreground/20"
                             >
                                 Manage Branches
                             </Link>
                             <Link
                                 href="/manage/tasks"
-                                className="flex h-14 items-center justify-center rounded-xl bg-slate-700 text-lg font-semibold text-white transition hover:bg-slate-600"
+                                className="flex h-14 items-center justify-center rounded-xl bg-foreground/10 text-lg font-semibold text-foreground transition hover:bg-foreground/20"
                             >
                                 Cleaning Tasks
                             </Link>
-                            <Link
-                                href="/manage/users"
-                                className="flex h-14 items-center justify-center rounded-xl bg-slate-700 text-lg font-semibold text-white transition hover:bg-slate-600"
-                            >
-                                Manage Users
-                            </Link>
+                            {session?.user?.isAdmin ? (
+                                <Link
+                                    href="/manage/settings"
+                                    className="flex h-14 items-center justify-center rounded-xl bg-foreground/10 text-lg font-semibold text-foreground transition hover:bg-foreground/20"
+                                >
+                                    Admin Settings
+                                </Link>
+                            ) : null}
                         </>
                     ) : (
                         <Link
                             href="/login"
-                            className="flex h-14 items-center justify-center rounded-xl bg-slate-700 text-lg font-semibold text-white transition hover:bg-slate-600"
+                            className="flex h-14 items-center justify-center rounded-xl bg-foreground/10 text-lg font-semibold text-foreground transition hover:bg-foreground/20"
                         >
                             Log In
                         </Link>

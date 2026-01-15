@@ -39,6 +39,17 @@ export const authOptions = {
             return user.active !== 0;
         },
     },
+    events: {
+        async createUser({ user }) {
+            const userCount = await prisma.user.count();
+            if (userCount === 1) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { isAdmin: 1 },
+                });
+            }
+        },
+    },
     pages: {
         signIn: "/login",
     },

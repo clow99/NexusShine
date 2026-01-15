@@ -40,7 +40,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { locationId, name, gender, order, tasks = [] } = body;
+    const { locationId, name, gender, order, taskIds = [], notificationEmail } = body;
 
     if (!locationId || !name || !gender) {
         return NextResponse.json(
@@ -56,15 +56,16 @@ export async function POST(request) {
             gender,
             order: order ?? 1,
             active: 1,
+            notificationEmail: notificationEmail || null,
         },
     });
 
-    if (Array.isArray(tasks)) {
-        for (const task of tasks) {
+    if (Array.isArray(taskIds)) {
+        for (const taskId of taskIds) {
             await prisma.bathroomTask.create({
                 data: {
                     bathroomId: bathroom.bathroomId,
-                    taskId: task.taskId,
+                    taskId: taskId,
                 },
             });
         }
@@ -72,12 +73,21 @@ export async function POST(request) {
 
     await resequence(locationId);
 
-    const bathrooms = await getBathrooms(locationId);
+    // Re-fetch with all relations
+    const createdBathroom = await prisma.bathroom.findUnique({
+        where: { bathroomId: bathroom.bathroomId },
+        include: {
+            bathroomTasks: { include: { task: true } },
+            cleanings: { take: 10, orderBy: { createdAt: "desc" } },
+            inspections: { include: { inspectedItems: true }, take: 1 },
+        },
+    });
+
     return NextResponse.json(
         {
             success: true,
             message: "Bathroom created successfully",
-            bathrooms,
+            bathroom: createdBathroom,
         },
         { status: 201 }
     );
@@ -163,10 +173,6 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-    const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const bathroomId = Number(searchParams.get("bathroomId"));

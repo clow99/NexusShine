@@ -37,21 +37,23 @@ export async function POST(request) {
         );
     }
 
-    await prisma.location.create({
+    const location = await prisma.location.create({
         data: {
             branchId,
             locationName,
             locationDescription,
             active: 1,
         },
+        include: {
+            bathrooms: true,
+        },
     });
 
-    const locations = await getLocations(branchId);
     return NextResponse.json(
         {
             success: true,
             message: "Location created successfully",
-            locations,
+            location,
         },
         { status: 201 }
     );
@@ -90,10 +92,6 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-    const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const locationId = Number(searchParams.get("locationId"));

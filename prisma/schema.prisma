@@ -7,12 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
   id             Int        @id @default(autoincrement())
   username       String     @unique
+  name           String?
   email          String     @unique
   code           String?    @unique
   password       String     @default("")
+  theme          String     @default("classic")
   isAdmin        Int        @default(0) @map("is_admin")
   active         Int        @default(1)
   emailVerified  DateTime?  @map("email_verified")
@@ -154,6 +157,16 @@ model InspectionItem {
 
   @@map("inspection_items")
   @@index([inspectionId])
+}
+
+model AppSetting {
+  id                Int      @id @default(autoincrement())
+  theme             String   @default("classic")
+  takePhotoOnReport Int      @default(1) @map("take_photo_on_report")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
 }
 
 // NextAuth tables

@@ -2,202 +2,246 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import CleanModal from "./modals/CleanModal";
+import InspectModal from "./modals/InspectModal";
 
-export default function BathroomsView({ initialBathrooms, locationName }) {
+export default function BathroomsView({
+    initialBathrooms,
+    locationName,
+    branchId,
+    takePhotoOnReport = true,
+}) {
     const [bathrooms, setBathrooms] = useState(initialBathrooms);
-    const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    
+    // Modal states
+    const [openCleanModal, setOpenCleanModal] = useState(null);
+    const [openInspectModal, setOpenInspectModal] = useState(null);
 
-    async function refresh(locationId) {
-        const res = await fetch(`/api/bathrooms?locationId=${locationId}`, {
-            cache: "no-store",
-        });
-        const data = await res.json();
-        setBathrooms(data.bathrooms);
+    // Check if any bathroom has inspected status
+    const hasInspectedBathroom = bathrooms.some((b) => b.status === "inspected");
+
+    function formatLastCleaned(date) {
+        if (!date) return "No cleanings yet";
+        const d = new Date(date);
+        const options = { weekday: "short", month: "short", day: "numeric", year: "numeric" };
+        const datePart = d.toLocaleDateString("en-US", options);
+        const timePart = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+        return `${datePart} ${timePart}`;
     }
 
-    async function handleClean(bathroom) {
-        const code = window.prompt("Enter your cleaning code");
-        if (!code) return;
-        setLoading(true);
-        setMessage("");
+    function formatCleaningDate(date) {
+        const d = new Date(date);
+        const options = { weekday: "short", month: "short", day: "numeric", year: "numeric" };
+        return d.toLocaleDateString("en-US", options);
+    }
 
-        const tasks = (bathroom.bathroomTasks ?? []).map((bt) => ({
-            taskId: bt.taskId,
-        }));
+    function formatCleaningTime(date) {
+        const d = new Date(date);
+        return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    }
 
-        const res = await fetch("/api/clean", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                bathroomId: bathroom.bathroomId,
-                tasks,
-                code,
-            }),
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-            setBathrooms(data.bathrooms);
-            setMessage("Cleaning recorded");
-        } else {
-            setMessage(data.message || "Unable to clean");
+    function getGenderIcon(gender) {
+        const g = (gender || "").toLowerCase();
+        if (g === "female" || g.includes("women")) {
+            return (
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-500">
+                    <i className="bi bi-person-standing-dress text-[32px] text-white"></i>
+                </div>
+            );
         }
-        setLoading(false);
-    }
-
-    async function handleInspect(bathroom) {
-        const reason = window.prompt(
-            "Enter issues (comma separated) for inspection"
+        if (g === "neutral" || g.includes("all") || g.includes("unisex")) {
+            return (
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-500">
+                    <i className="bi bi-person-standing text-[24px] text-white"></i>
+                    <i className="bi bi-person-standing-dress text-[24px] text-white"></i>
+                </div>
+            );
+        }
+        // Default: Male
+        return (
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-500">
+                <i className="bi bi-person-standing text-[32px] text-white"></i>
+            </div>
         );
-        if (!reason) return;
-        setLoading(true);
-        setMessage("");
-
-        const res = await fetch("/api/inspection", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                bathroomId: bathroom.bathroomId,
-                locationId: bathroom.locationId,
-                items: reason.split(",").map((r) => r.trim()),
-                image: null,
-            }),
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-            setBathrooms(data.bathrooms);
-            setMessage("Inspection flagged");
-        } else {
-            setMessage(data.message || "Unable to create inspection");
-        }
-        setLoading(false);
     }
 
-    async function handleClear(bathroom) {
-        setLoading(true);
-        setMessage("");
-        const res = await fetch("/api/inspection/clear", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                bathroomId: bathroom.bathroomId,
-                locationId: bathroom.locationId,
-            }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-            setBathrooms(data.bathrooms);
-            setMessage("Inspection cleared");
-        } else {
-            setMessage(data.message || "Unable to clear");
-        }
-        setLoading(false);
+    function handleCleaningsUpdate(bathroomId, newCleanings) {
+        setBathrooms((prev) =>
+            prev.map((b) =>
+                b.bathroomId === bathroomId
+                    ? { ...b, cleanings: newCleanings }
+                    : b
+            )
+        );
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <div className="text-sm text-slate-300">Location</div>
-                    <div className="text-3xl font-bold text-white">
-                        {locationName}
-                    </div>
-                </div>
-                <div className="text-sm text-emerald-400">{message}</div>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-                {bathrooms
-                    .slice()
-                    .sort((a, b) => a.order - b.order)
-                    .map((bathroom) => (
-                        <motion.div
-                            key={bathroom.bathroomId}
-                            layout
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={`rounded-2xl border p-5 shadow ${
-                                bathroom.status === "inspected"
-                                    ? "border-red-500/60 bg-red-950/30"
-                                    : "border-emerald-500/60 bg-slate-800/70"
-                            }`}
+        <div className="min-h-screen bg-background text-foreground">
+            {/* Main Container with border */}
+            <div
+                className={`min-h-screen border-[6px] rounded-3xl ${
+                    hasInspectedBathroom ? "border-red-600" : "border-brand"
+                } p-6`}
+            >
+                {/* Header */}
+                <header className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-5">
+                        <Link
+                            href={branchId ? `/locations/${branchId}` : "/branches"}
+                            className="flex h-10 w-10 items-center justify-center bg-foreground/10 rounded text-foreground hover:bg-foreground/20 transition"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-xl font-semibold text-white">
-                                        {bathroom.name}
-                                    </div>
-                                    <div className="text-sm text-slate-300">
-                                        {bathroom.gender}
-                                    </div>
-                                </div>
-                                <div className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-                                    {bathroom.status}
-                                </div>
-                            </div>
-                            <div className="mt-3 text-sm text-slate-200">
-                                Tasks:
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                    {bathroom.bathroomTasks.map((bt) => (
-                                        <span
-                                            key={bt.bathroomTaskId}
-                                            className="rounded-lg bg-slate-700 px-2 py-1 text-xs text-white"
-                                        >
-                                            {bt.task?.taskName}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="mt-3 text-sm text-slate-200">
-                                Recent cleanings:
-                                <div className="mt-1 space-y-1">
-                                    <AnimatePresence>
-                                        {bathroom.cleanings?.map((cleaning) => (
-                                            <motion.div
-                                                key={cleaning.cleaningId}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                className="rounded-lg bg-slate-700/70 px-2 py-1 text-xs text-white"
-                                            >
-                                                {cleaning.username ?? "User"} —{" "}
-                                                {new Date(
-                                                    cleaning.createdAt
-                                                ).toLocaleString()}
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex gap-2">
-                                <button
-                                    disabled={loading}
-                                    onClick={() => handleClean(bathroom)}
-                                    className="flex-1 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:opacity-50"
+                            <i className="bi bi-arrow-left"></i>
+                        </Link>
+                        <Link href="/" className="flex items-center">
+                            <img
+                                src="/nexus_shine_logo.png"
+                                alt="NexusShine"
+                                className="h-10 w-auto"
+                            />
+                        </Link>
+                    </div>
+                    <h1 className="text-2xl font-bold text-foreground">{locationName}</h1>
+                    
+                </header>
+
+                {/* Message */}
+                {message && (
+                    <div className="mx-auto max-w-4xl mb-4 rounded-lg bg-brand/20 px-4 py-2 text-sm text-brand">
+                        {message}
+                    </div>
+                )}
+
+                {/* Bathroom Cards Grid */}
+                <div className="grid gap-8 md:grid-cols-2">
+                    {bathrooms
+                        .slice()
+                        .sort((a, b) => a.order - b.order)
+                        .map((bathroom) => {
+                            const lastCleaning = bathroom.cleanings?.[0];
+                            const recentCleanings = bathroom.cleanings?.slice(0, 4) || [];
+                            const isInspected = bathroom.status === "inspected";
+                            const activeInspection = bathroom.inspections?.[0];
+                            const inspectionItems = activeInspection?.inspectedItems || [];
+
+                            return (
+                                <motion.div
+                                    key={bathroom.bathroomId}
+                                    layout
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-2xl border border-foreground/10 bg-background overflow-hidden flex flex-col shadow-md"
                                 >
-                                    Mark Clean
-                                </button>
-                                <button
-                                    disabled={loading}
-                                    onClick={() => handleInspect(bathroom)}
-                                    className="flex-1 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-400 disabled:opacity-50"
-                                >
-                                    Flag Issue
-                                </button>
-                                {bathroom.status !== "open" && (
-                                    <button
-                                        disabled={loading}
-                                        onClick={() => handleClear(bathroom)}
-                                        className="flex-1 rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-600 disabled:opacity-50"
+                                    {/* Card Header */}
+                                    <div className="flex items-start gap-3 p-5">
+                                        {getGenderIcon(bathroom.gender)}
+                                        <div className="flex flex-col">
+                                            <h2 className="text-xl font-bold text-foreground">
+                                                {bathroom.name}
+                                            </h2>
+                                            {isInspected && inspectionItems.length > 0 && (
+                                                <div className="flex items-center gap-2 text-red-500 text-sm mt-1">
+                                                    <i className="bi bi-exclamation-triangle-fill"></i>
+                                                    <span>
+                                                        {inspectionItems
+                                                            .map((item) => item.inspectionReason)
+                                                            .join(", ")}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Last Cleaned Section */}
+                                    <div
+                                        className={`px-5 py-3 bg-gradient-to-r ${
+                                            isInspected
+                                                ? "from-red-600"
+                                                : "from-brand"
+                                        } to-transparent`}
                                     >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
+                                        <div className="text-xs text-white/80 font-medium">
+                                            Last Cleaned
+                                        </div>
+                                        <div className="text-2xl font-bold text-white">
+                                            {lastCleaning
+                                                ? formatLastCleaned(lastCleaning.createdAt)
+                                                : "No Cleanings"}
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Cleanings List */}
+                                    <div className="flex-1 px-5 py-4 max-h-[200px] overflow-auto">
+                                        <AnimatePresence>
+                                            {recentCleanings.slice(1).map((cleaning) => (
+                                                <motion.div
+                                                    key={cleaning.cleaningId}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                            className="flex items-center justify-between bg-foreground/5 p-4 rounded-lg mb-2 last:mb-0"
+                                                >
+                                            <span className="text-sm text-foreground/70">
+                                                        {formatCleaningDate(cleaning.createdAt)}
+                                                    </span>
+                                                    <span className="text-sm text-brand font-medium">
+                                                        {formatCleaningTime(cleaning.createdAt)}
+                                                    </span>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                        {recentCleanings.length <= 1 && (
+                                    <div className="py-3 text-sm text-foreground/40 text-center">
+                                                {recentCleanings.length === 0
+                                                    ? "No recent cleanings"
+                                                    : ""}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="grid grid-cols-2 gap-3 p-5 border-t border-foreground/10">
+                                        <InspectModal
+                                            details={bathroom}
+                                            openInspect={openInspectModal === bathroom.bathroomId}
+                                            setOpenInspect={(open) =>
+                                                setOpenInspectModal(open ? bathroom.bathroomId : null)
+                                            }
+                                            setDisplayBathrooms={setBathrooms}
+                                            takePhotoOnReport={takePhotoOnReport}
+                                        />
+                                        <button
+                                            onClick={() => setOpenCleanModal(bathroom.bathroomId)}
+                                            className="flex-1 rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
+                                        >
+                                            Clean
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                </div>
             </div>
+
+            {/* Clean Modals (rendered outside cards) */}
+            <AnimatePresence>
+                {openCleanModal && (
+                    <CleanModal
+                        openClean={true}
+                        setOpenClean={(open) => {
+                            if (!open) setOpenCleanModal(null);
+                        }}
+                        details={bathrooms.find((b) => b.bathroomId === openCleanModal)}
+                        setCleanings={(newCleanings) =>
+                            handleCleaningsUpdate(openCleanModal, newCleanings)
+                        }
+                        setDisplayBathrooms={setBathrooms}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Inspect Modal (rendered at InspectModal button level) */}
         </div>
     );
 }

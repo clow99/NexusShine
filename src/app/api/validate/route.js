@@ -14,13 +14,13 @@ export async function POST(request) {
     const user = await prisma.user.findFirst({ where: { code } });
     if (!user) {
         return NextResponse.json(
-            { isValid: false, message: "Invalid code." },
+            { valid: false, message: "Invalid code." },
             { status: 200 }
         );
     }
 
     return NextResponse.json(
-        { isValid: true, message: "Valid credentials." },
+        { valid: true, userId: user.id, name: user.name || user.username },
         { status: 200 }
     );
 }

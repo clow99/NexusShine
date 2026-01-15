@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+    }
+
     const users = await prisma.user.findMany({
         orderBy: { username: "asc" },
         select: {
@@ -20,8 +25,8 @@ export async function GET() {
 
 export async function POST(request) {
     const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.isAdmin) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -51,8 +56,8 @@ export async function POST(request) {
 
 export async function PATCH(request) {
     const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.isAdmin) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -84,8 +89,8 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
     const session = await auth();
-    if (!session) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.isAdmin) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
