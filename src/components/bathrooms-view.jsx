@@ -18,6 +18,7 @@ export default function BathroomsView({
     // Modal states
     const [openCleanModal, setOpenCleanModal] = useState(null);
     const [openInspectModal, setOpenInspectModal] = useState(null);
+    const [openCleaningDetails, setOpenCleaningDetails] = useState(null);
 
     // Check if any bathroom has inspected status
     const hasInspectedBathroom = bathrooms.some((b) => b.status === "inspected");
@@ -76,6 +77,17 @@ export default function BathroomsView({
             )
         );
     }
+
+    const selectedBathroom = openCleaningDetails
+        ? bathrooms.find(
+              (bathroom) => bathroom.bathroomId === openCleaningDetails.bathroomId
+          )
+        : null;
+    const selectedCleaning = openCleaningDetails
+        ? selectedBathroom?.cleanings?.find(
+              (cleaning) => cleaning.cleaningId === openCleaningDetails.cleaningId
+          )
+        : null;
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -160,6 +172,27 @@ export default function BathroomsView({
                                                 ? "from-red-600"
                                                 : "from-brand"
                                         } to-transparent`}
+                                        onClick={() => {
+                                            if (lastCleaning) {
+                                                setOpenCleaningDetails({
+                                                    bathroomId: bathroom.bathroomId,
+                                                    cleaningId: lastCleaning.cleaningId,
+                                                });
+                                            }
+                                        }}
+                                        role={lastCleaning ? "button" : undefined}
+                                        tabIndex={lastCleaning ? 0 : undefined}
+                                        onKeyDown={(event) => {
+                                            if (
+                                                lastCleaning &&
+                                                (event.key === "Enter" || event.key === " ")
+                                            ) {
+                                                setOpenCleaningDetails({
+                                                    bathroomId: bathroom.bathroomId,
+                                                    cleaningId: lastCleaning.cleaningId,
+                                                });
+                                            }
+                                        }}
                                     >
                                         <div className="text-xs text-white/80 font-medium">
                                             Last Cleaned
@@ -180,9 +213,28 @@ export default function BathroomsView({
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     exit={{ opacity: 0 }}
-                                            className="flex items-center justify-between bg-foreground/5 p-4 rounded-lg mb-2 last:mb-0"
+                                                    className="flex items-center justify-between bg-foreground/5 p-4 rounded-lg mb-2 last:mb-0 cursor-pointer"
+                                                    onClick={() =>
+                                                        setOpenCleaningDetails({
+                                                            bathroomId: bathroom.bathroomId,
+                                                            cleaningId: cleaning.cleaningId,
+                                                        })
+                                                    }
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(event) => {
+                                                        if (
+                                                            event.key === "Enter" ||
+                                                            event.key === " "
+                                                        ) {
+                                                            setOpenCleaningDetails({
+                                                                bathroomId: bathroom.bathroomId,
+                                                                cleaningId: cleaning.cleaningId,
+                                                            });
+                                                        }
+                                                    }}
                                                 >
-                                            <span className="text-sm text-foreground/70">
+                                                    <span className="text-sm text-foreground/70">
                                                         {formatCleaningDate(cleaning.createdAt)}
                                                     </span>
                                                     <span className="text-sm text-brand font-medium">
@@ -192,7 +244,7 @@ export default function BathroomsView({
                                             ))}
                                         </AnimatePresence>
                                         {recentCleanings.length <= 1 && (
-                                    <div className="py-3 text-sm text-foreground/40 text-center">
+                                            <div className="py-3 text-sm text-foreground/40 text-center">
                                                 {recentCleanings.length === 0
                                                     ? "No recent cleanings"
                                                     : ""}
@@ -238,6 +290,78 @@ export default function BathroomsView({
                         }
                         setDisplayBathrooms={setBathrooms}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Cleaning Details Modal */}
+            <AnimatePresence>
+                {openCleaningDetails && selectedCleaning && (
+                    <motion.div
+                        className="fixed inset-0 z-[500] flex flex-col overflow-hidden bg-black/20 p-1 backdrop-blur-sm"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                    >
+                        <motion.div
+                            className="flex flex-col h-full w-full overflow-auto rounded-3xl border border-foreground/10 bg-background text-foreground shadow-2xl"
+                            initial={{ scale: 1, opacity: 1 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 1, opacity: 0.9 }}
+                            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                        >
+                            <div className="p-8 flex flex-row items-center gap-5">
+                                <div className="flex flex-col">
+                                    <div className="text-foreground text-2xl font-bold">
+                                        {selectedBathroom?.name || "Cleaning Details"}
+                                    </div>
+                                    <div className="text-foreground/60">
+                                        {formatCleaningDate(selectedCleaning.createdAt)}{" "}
+                                        {formatCleaningTime(selectedCleaning.createdAt)}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setOpenCleaningDetails(null)}
+                                    className="ml-auto"
+                                >
+                                    <i className="bi bi-x-lg text-foreground text-3xl"></i>
+                                </button>
+                            </div>
+
+                            <div className="px-8 pb-6">
+                                <div className="text-sm text-foreground/60 mb-2">
+                                    Cleaned By
+                                </div>
+                                <div className="text-lg text-foreground font-semibold">
+                                    {selectedCleaning.user?.name ||
+                                        selectedCleaning.user?.username ||
+                                        "Unknown"}
+                                </div>
+                            </div>
+
+                            <div className="px-8 pb-10">
+                                <div className="text-sm text-foreground/60 mb-3">
+                                    Tasks Completed
+                                </div>
+                                {selectedCleaning.tasks?.length ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {selectedCleaning.tasks.map((task) => (
+                                            <div
+                                                key={task.cleaningTaskId}
+                                                className="rounded-lg border border-foreground/10 bg-foreground/5 px-4 py-3 text-foreground"
+                                            >
+                                                {task.task?.taskName || "Task"}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-lg border border-foreground/10 bg-foreground/5 px-4 py-3 text-foreground/70">
+                                        No tasks recorded for this cleaning.
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
