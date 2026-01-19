@@ -1,7 +1,7 @@
 # NexusShine
-Cleaning task & inspection management across branches and locations.
+Next.js app for OHSA washroom cleaning compliance across multiple sites.
 
-NexusShine is a Next.js web application for managing cleaning tasks, inspections, and related entities (branches, locations, bathrooms, users). It centralizes scheduling and tracking so teams can coordinate cleaning operations across multiple sites.
+NexusShine manages cleaning tasks, inspections, and related entities (branches, locations, bathrooms, users) with schedules and tracking. It also supports iPad-based cleaning record displays posted outside washrooms.
 
 The app exposes a set of REST-like API endpoints for CRUD operations and uses a relational database (via Prisma) to persist data such as users, branches, locations, bathrooms, and tasks.
 
